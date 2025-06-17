@@ -68,7 +68,7 @@ jobs:
       
       - name: Run Nikto
         run: |
-          docker run --rm --user root sullo/nikto -h $DAST_TARGET_URL > nikto-report.txt
+          docker run --rm --user root securecodebox/nikto -h $DAST_TARGET_URL > nikto-report.txt
       
       - name: Upload Nikto Report
         uses: actions/upload-artifact@v4
