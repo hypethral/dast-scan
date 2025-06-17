@@ -1,0 +1,113 @@
+name: Full DAST + PenTest Super Pipeline
+
+on:
+  push:
+    branches: [main]
+
+env:
+  DAST_TARGET_URL: https://portal-wbgg.com
+
+jobs:
+  security-scan:
+    name: DAST + PenTest Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      ######################################
+      # 🕷️ Dirsearch
+      ######################################
+      - name: Run Dirsearch
+        run: |
+          git clone https://github.com/maurosoria/dirsearch.git
+          python3 dirsearch/dirsearch.py -u $DAST_TARGET_URL -e php,html,js -o dirsearch.txt
+
+      - name: Upload Dirsearch Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dirsearch-report
+          path: dirsearch.txt
+
+      ######################################
+      # 🛡️ OWASP ZAP
+      ######################################
+      - name: Run OWASP ZAP Baseline Scan
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/zap/wrk:rw \
+            owasp/zap2docker-stable zap-baseline.py \
+              -t $DAST_TARGET_URL \
+              -g gen.conf \
+              -r zap-report.html \
+              -x zap-report.xml \
+              -J zap-report.json \
+              -z "-config api.disablekey=true"
+
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-report.html
+
+      ######################################
+      # 🧪 SQLMap
+      ######################################
+      - name: Run SQLMap (example param)
+        run: |
+          mkdir -p sqlmap-output
+          sqlmap -u "$DAST_TARGET_URL/vulnerable.php?id=1" --batch --output-dir=sqlmap-output || true
+
+      - name: Upload SQLMap Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: sqlmap-report
+          path: sqlmap-output
+
+      ######################################
+      # 🔎 Nikto
+      ######################################
+      - name: Run Nikto
+        run: |
+          docker run --rm sullo/nikto -h $DAST_TARGET_URL > nikto-report.txt
+
+      - name: Upload Nikto Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: nikto-report
+          path: nikto-report.txt
+
+      ######################################
+      # ⚙️ Wapiti
+      ######################################
+      - name: Install and Run Wapiti
+        run: |
+          pip install wapiti3
+          wapiti -u $DAST_TARGET_URL -o wapiti-report --format html
+
+      - name: Upload Wapiti Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: wapiti-report
+          path: wapiti-report/report.html
+
+      ######################################
+      # 🧨 XSStrike
+      ######################################
+      - name: Install and Run XSStrike (demo)
+        run: |
+          git clone https://github.com/s0md3v/XSStrike.git
+          cd XSStrike && pip install -r requirements.txt
+          python3 xsstrike.py -u "$DAST_TARGET_URL/search.php?q=test" --crawl --skip --timeout 5 --blind || true
+
+      - name: Upload XSStrike Report (manual logs)
+        run: |
+          echo "XSStrike doesn't generate structured reports, saving terminal output..."
+          cp XSStrike/output.txt xsstrike-output.txt || touch xsstrike-output.txt
+
+      - name: Upload XSStrike Output
+        uses: actions/upload-artifact@v4
+        with:
+          name: xsstrike-report
+          path: xsstrike-output.txt
+
