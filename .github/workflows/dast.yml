@@ -15,29 +15,17 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-
-      ######################################
-      # 🧰 Install Python + Pip Packages
-      ######################################
-      - name: Install Required Python Packages
-        run: |
-          python3 -m pip install --upgrade pip
-          pip install defusedxml wapiti3
     
       ######################################
       # 🕷️ Dirsearch
       ######################################
-      - name: Run Dirsearch
+      - name: Run Dirsearch in Docker
         run: |
-          git clone https://github.com/maurosoria/dirsearch.git
-          python3 dirsearch/dirsearch.py -u $DAST_TARGET_URL -e php,html,js -o dirsearch.txt
+          docker run --rm -v ${{ github.workspace }}:/app kalilinux/kali-rolling \
+            bash -c "apt update && apt install -y git python3 && \
+            git clone https://github.com/maurosoria/dirsearch.git && \
+            python3 dirsearch/dirsearch.py -u $DAST_TARGET_URL -e php,html,js -o /app/dirsearch.txt"
 
-      - name: Upload Dirsearch Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: dirsearch-report
-          path: dirsearch.txt
 
       ######################################
       # 🛡️ OWASP ZAP
