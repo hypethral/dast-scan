@@ -15,16 +15,26 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-    
+      
       ######################################
-      # 🕷️ Dirsearch
+      # 🛡️ Gobuster
       ######################################
-      - name: Run Dirsearch in Docker
+      - name: Install Gobuster
         run: |
-          docker run --rm -v ${{ github.workspace }}:/app kalilinux/kali-rolling \
-            bash -c "apt update && apt install -y git python3 && \
-            git clone https://github.com/maurosoria/dirsearch.git && \
-            python3 dirsearch/dirsearch.py -u $DAST_TARGET_URL -e php,html,js -o /app/dirsearch.txt"
+          wget https://github.com/OJ/gobuster/releases/download/v3.6.0/gobuster_Linux_x86_64.tar.gz
+          tar -xzf gobuster_Linux_x86_64.tar.gz
+          sudo mv gobuster /usr/local/bin/
+      
+      - name: Run Gobuster
+        run: |
+          gobuster dir -u $DAST_TARGET_URL -w /usr/share/seclists/Discovery/Web-Content/common.txt -o gobuster.txt
+      
+      - name: Upload Gobuster Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: gobuster-report
+          path: gobuster.txt
+
 
 
       ######################################
