@@ -46,21 +46,21 @@ jobs:
       # 🛡️ OWASP ZAP
       ######################################
 
-      - name: Create Output Directory
-        run: mkdir -p zap_output
+      # - name: Create Output Directory
+      #   run: mkdir -p zap_output
 
-      - name: Run ZAP Baseline Scan
-        run: |
-          docker run --user root \
-            -v $(pwd)/zap_output:/zap/wrk/:rw \
-            ghcr.io/zaproxy/zaproxy:stable \
-            zap-baseline.py -t $DAST_TARGET_URL -r zap_report.html -d || true
+      # - name: Run ZAP Baseline Scan
+      #   run: |
+      #     docker run --user root \
+      #       -v $(pwd)/zap_output:/zap/wrk/:rw \
+      #       ghcr.io/zaproxy/zaproxy:stable \
+      #       zap-baseline.py -t $DAST_TARGET_URL -r zap_report.html -d || true
 
-      - name: Upload ZAP Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap_report
-          path: zap_output/zap_report.html
+      # - name: Upload ZAP Report
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: zap_report
+      #     path: zap_output/zap_report.html
 
       ######################################
       # 🔎 Nikto
@@ -68,13 +68,14 @@ jobs:
       
       - name: Run Nikto
         run: |
-          docker run --rm --user root gabesullice/nikto -h $DAST_TARGET_URL > nikto-report.txt
+          docker run --rm --user root k8gege/nikto -h $DAST_TARGET_URL > nikto-report.txt
       
       - name: Upload Nikto Report
         uses: actions/upload-artifact@v4
         with:
           name: nikto-report
           path: nikto-report.txt
+
 
       ######################################
       # ⚙️ Wapiti
