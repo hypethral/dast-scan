@@ -19,35 +19,37 @@ jobs:
       ######################################
       # 🛡️ Gobuster
       ######################################
-      - name: Install Gobuster
-        run: |
-          wget https://github.com/OJ/gobuster/releases/download/v3.6.0/gobuster_Linux_x86_64.tar.gz
-          tar -xzf gobuster_Linux_x86_64.tar.gz
-          sudo mv gobuster /usr/local/bin/
+     
+      # - name: Install Gobuster
+      #   run: |
+      #     wget https://github.com/OJ/gobuster/releases/download/v3.6.0/gobuster_Linux_x86_64.tar.gz
+      #     tar -xzf gobuster_Linux_x86_64.tar.gz
+      #     sudo mv gobuster /usr/local/bin/
       
-      - name: Download Better SecLists Wordlist
-        run: |
-          mkdir -p wordlists
-          curl -L https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/directory-list-2.3-medium.txt \
-            -o wordlists/directory-list-2.3-medium.txt
+      # - name: Download Better SecLists Wordlist
+      #   run: |
+      #     mkdir -p wordlists
+      #     curl -L https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/directory-list-2.3-medium.txt \
+      #       -o wordlists/directory-list-2.3-medium.txt
       
-      - name: Run Gobuster
-        run: |
-          gobuster dir -u $DAST_TARGET_URL -w wordlists/directory-list-2.3-medium.txt -o gobuster.txt
+      # - name: Run Gobuster
+      #   run: |
+      #     gobuster dir -u $DAST_TARGET_URL -w wordlists/directory-list-2.3-medium.txt -o gobuster.txt
       
-      - name: Upload Gobuster Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: gobuster-report
-          path: gobuster.txt
-
+      # - name: Upload Gobuster Report
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: gobuster-report
+      #     path: gobuster.txt
 
       ######################################
       # 🛡️ OWASP ZAP
       ######################################
+      
       - name: Run OWASP ZAP Baseline Scan
         run: |
-          docker run --rm -v ${{ github.workspace }}:/zap/wrk:rw \
+          docker run --rm \
+            --mount type=tmpfs,destination=/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
               -t $DAST_TARGET_URL \
               -g gen.conf \
@@ -55,8 +57,6 @@ jobs:
               -x zap-report.xml \
               -J zap-report.json \
               -z "-config api.disablekey=true" || true
-
-
 
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
