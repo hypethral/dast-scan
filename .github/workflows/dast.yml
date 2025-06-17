@@ -45,13 +45,15 @@ jobs:
       ######################################
       # 🛡️ OWASP ZAP
       ######################################
-      
-      - name: Prepare ZAP Output Directory
+
+
+      - name: Create Output Directory
         run: mkdir -p zap-output
       
       - name: Run OWASP ZAP Baseline Scan
         run: |
-          docker run --rm -v ${{ github.workspace }}/zap-output:/zap/wrk \
+          docker run --rm \
+            -v ${{ github.workspace }}/zap-output:/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
               -t $DAST_TARGET_URL \
               -g gen.conf \
@@ -59,6 +61,10 @@ jobs:
               -x zap-report.xml \
               -J zap-report.json \
               -z "-config api.disablekey=true" || true
+      
+      - name: List ZAP Output
+        run: ls -lh zap-output/
+      
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
